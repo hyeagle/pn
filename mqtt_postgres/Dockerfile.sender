@@ -1,0 +1,10 @@
+FROM maven:3.9-eclipse-temurin-8 AS build
+WORKDIR /build
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+FROM eclipse-temurin:8-jre-alpine
+WORKDIR /app
+COPY --from=build /build/target/mqtt_postgres.jar app.jar
+ENTRYPOINT ["java", "-cp", "app.jar", "org.example.sender.Sender"]
