@@ -45,12 +45,6 @@ mvn clean package -DskipTests
 java -cp target/mqtt_postgres.jar org.example.consumer.Consumer
 ```
 
-### 4. 运行 Sender
-
-```bash
-java -cp target/mqtt_postgres.jar org.example.sender.Sender
-```
-
 > Consumer 和 Sender 需要分别在不同的终端窗口运行。
 
 ## Docker 部署
@@ -58,15 +52,13 @@ java -cp target/mqtt_postgres.jar org.example.sender.Sender
 ### 1. 构建镜像
 
 ```bash
-docker build -f Dockerfile.consumer -t mqtt-consumer .
-docker build -f Dockerfile.sender -t mqtt-sender .
+docker build -f Dockerfile -t mqtt-consumer .
 ```
 
 ### 2. 运行容器
 
 ```bash
 docker run -d --name consumer mqtt-consumer
-docker run -d --name sender mqtt-sender
 ```
 
 ### 3. 自定义配置
@@ -82,11 +74,6 @@ docker run -d \
   -v /path/to/application.properties:/app/application.properties:ro \
   --name consumer \
   mqtt-consumer
-
-docker run -d \
-  -v /path/to/application.properties:/app/application.properties:ro \
-  --name sender \
-  mqtt-sender
 ```
 
 **方式二：使用环境变量（推荐）**
@@ -107,15 +94,6 @@ docker run -d --name consumer \
   -e POSTGRES_USERNAME=postgres \
   -e POSTGRES_PASSWORD=123456 \
   mqtt-consumer
-
-# 启动 Sender
-docker run -d --name sender \
-  -e MQTT_BROKER=your-mqtt-host \
-  -e MQTT_PORT=1883 \
-  -e MQTT_TOPIC=test/topic \
-  -e MQTT_USERNAME=admin \
-  -e MQTT_PASSWORD=1qaz@WSX \
-  mqtt-sender
 ```
 
 支持的环境变量：
