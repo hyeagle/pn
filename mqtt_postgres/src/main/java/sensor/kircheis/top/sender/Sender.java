@@ -1,17 +1,25 @@
-package org.example.sender;
+package sensor.kircheis.top.sender;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
-import org.eclipse.paho.client.mqttv3.*;
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import sensor.kircheis.top.dto.SensorData;
+import sensor.kircheis.top.dto.SensorMessage;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 public class Sender {
     private static MqttClient client;
     private static String broker;
@@ -19,26 +27,17 @@ public class Sender {
     private static String topic;
     private static String username;
     private static String password;
-    private static ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public static void main(String[] args) {
         try {
-            // 加载配置
             loadConfig();
-
-            // 初始化MQTT客户端
             initMqttClient();
-
-            // 连接MQTT broker
             connect();
-
-            // 发送消息
             sendMessages();
-
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Sender failed", e);
         } finally {
-            // 断开连接
             disconnect();
         }
     }
@@ -57,7 +56,6 @@ public class Sender {
         Configurations configs = new Configurations();
         PropertiesConfiguration config = configs.properties("application.properties");
 
-        // MQTT配置（环境变量优先）
         broker = getEnv("MQTT_BROKER", config.getString("mqtt.broker"));
         port = getEnvInt("MQTT_PORT", config.getInt("mqtt.port"));
         topic = getEnv("MQTT_TOPIC", config.getString("mqtt.topic"));
@@ -80,50 +78,43 @@ public class Sender {
         client.setCallback(new MqttCallback() {
             @Override
             public void connectionLost(Throwable cause) {
-                System.out.println("Connection lost: " + cause.getMessage());
+                log.warn("Connection lost: {}", cause.getMessage());
             }
 
             @Override
-            public void messageArrived(String topic, MqttMessage message) throws Exception {
-                // 发送者不需要处理消息
+            public void messageArrived(String topic, MqttMessage message) {
             }
 
             @Override
             public void deliveryComplete(IMqttDeliveryToken token) {
-                System.out.println("Delivery complete");
+                log.debug("Delivery complete");
             }
         });
     }
 
     private static void connect() throws MqttException {
         client.connect();
-        System.out.println("Connected to MQTT Broker: " + broker + ":" + port);
+        log.info("Connected to MQTT Broker: {}:{}", broker, port);
     }
 
     private static void sendMessages() throws Exception {
         while (true) {
-            for (int i = 0; i < 100; i++) {
-                // 生成消息
-                Map<String, Object> messageMap = new HashMap<>();
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
-                messageMap.put("timestamp", sdf.format(new Date()));
-                messageMap.put("message", "Hello from MQTT sender");
-                messageMap.put("value", System.currentTimeMillis() % 100);
+            List<SensorData> dataList = new ArrayList<>();
+            dataList.add(new SensorData("sensor_001", "temperature", 25.6 + Math.random() * 10, "C"));
+            dataList.add(new SensorData("sensor_002", "humidity", 50.0 + Math.random() * 20, "%"));
 
-                // 转换为JSON
-                String jsonMessage = objectMapper.writeValueAsString(messageMap);
+            SensorMessage sensorMessage = new SensorMessage(
+                    "device_001", System.currentTimeMillis() / 1000, 20, new BigDecimal("1.1"), new BigDecimal("1.1"), dataList);
 
-                // 创建MQTT消息
-                MqttMessage message = new MqttMessage(jsonMessage.getBytes());
-                message.setQos(1);
-                message.setRetained(false);
+            String jsonMessage = objectMapper.writeValueAsString(sensorMessage);
 
-                // 发布消息
-                client.publish(topic, message);
-                System.out.println("Sent message: " + jsonMessage);
-            }
+            MqttMessage message = new MqttMessage(jsonMessage.getBytes());
+            message.setQos(1);
+            message.setRetained(false);
 
-            // 等待1秒
+            client.publish(topic, message);
+            log.debug("Sent message: {}", jsonMessage);
+
             TimeUnit.SECONDS.sleep(1);
         }
     }
@@ -132,10 +123,10 @@ public class Sender {
         try {
             if (client != null && client.isConnected()) {
                 client.disconnect();
-                System.out.println("Disconnected from MQTT Broker");
+                log.info("Disconnected from MQTT Broker");
             }
         } catch (MqttException e) {
-            e.printStackTrace();
+            log.error("Failed to disconnect from MQTT Broker", e);
         }
     }
 }
