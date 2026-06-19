@@ -88,27 +88,30 @@ public class DailyTableScheduler {
         long startTs = toEpochSecond(date);
         long endTs = toEpochSecond(date.plusDays(1));
 
+        String attachSql = "ALTER TABLE " + PARENT_TABLE + " ATTACH PARTITION " + tableName +
+                " FOR VALUES FROM (" + startTs + ") TO (" + endTs + ")";
+
         // 检查表是否已存在
         List<Integer> result = jdbcTemplate.query(
                 "SELECT 1 FROM information_schema.tables WHERE table_name = ?",
                 (rs, rowNum) -> 1, tableName);
         if (!result.isEmpty()) {
-            log.info("Daily partition table already exists, skipped: {}", tableName);
+            // 表存在但可能未绑定，尝试重新 attach
+            log.info("Daily partition table already exists: {}", tableName);
+            tryAttachPartition(tableName, attachSql);
             return;
         }
 
         String createTableSql = "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
-                "id BIGSERIAL PRIMARY KEY, " +
+                "id BIGINT NOT NULL DEFAULT nextval('" + SEQ_NAME + "'), " +
                 "device_id VARCHAR(50) NOT NULL, " +
                 "sensor_id VARCHAR(50) NOT NULL, " +
                 "metric VARCHAR(50) NOT NULL, " +
                 "value NUMERIC(10,2) NOT NULL, " +
                 "ts BIGINT NOT NULL, " +
-                "create_time TIMESTAMP NOT NULL DEFAULT now()" +
+                "create_time TIMESTAMP NOT NULL DEFAULT now(), " +
+                "PRIMARY KEY (id)" +
                 ")";
-
-        String attachSql = "ALTER TABLE " + PARENT_TABLE + " ATTACH PARTITION " + tableName +
-                " FOR VALUES FROM (" + startTs + ") TO (" + endTs + ")";
 
         try {
             jdbcTemplate.execute(createTableSql);
@@ -118,6 +121,27 @@ public class DailyTableScheduler {
             log.info("Daily partition table created and attached: {} FOR VALUES FROM ({}) TO ({})", tableName, startTs, endTs);
         } catch (Exception e) {
             log.error("Failed to create daily table: {}", e.getMessage(), e);
+        }
+    }
+
+    private void tryAttachPartition(String tableName, String attachSql) {
+        // 先查 pg_inherits 是否已绑定，避免 ATTACH 触发数据校验
+        List<Integer> attached = jdbcTemplate.query(
+                "SELECT 1 FROM pg_inherits i " +
+                "JOIN pg_class c ON i.inhrelid = c.oid " +
+                "JOIN pg_class p ON i.inhparent = p.oid " +
+                "WHERE c.relname = ? AND p.relname = ?",
+                (rs, rowNum) -> 1, tableName, PARENT_TABLE);
+        if (!attached.isEmpty()) {
+            log.info("Partition already attached: {}", tableName);
+            return;
+        }
+
+        try {
+            jdbcTemplate.execute(attachSql);
+            log.info("Partition attached to parent: {}", tableName);
+        } catch (Exception e) {
+            log.error("Failed to attach partition: {}", e.getMessage(), e);
         }
     }
 }
