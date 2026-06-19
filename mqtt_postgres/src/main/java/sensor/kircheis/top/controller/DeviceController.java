@@ -4,8 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import sensor.kircheis.top.dto.ControlCommand;
-import sensor.kircheis.top.po.DeviceInfo;
+import sensor.kircheis.top.dto.request.ControlRequest;
+import sensor.kircheis.top.dto.request.DeviceRequest;
+import sensor.kircheis.top.dto.response.DeviceResponse;
 import sensor.kircheis.top.service.DeviceService;
 import sensor.kircheis.top.service.PageResult;
 
@@ -24,7 +25,7 @@ public class DeviceController {
      * GET /api/devices?page=1&size=10
      */
     @GetMapping("/devices")
-    public PageResult<DeviceInfo> getDevices(
+    public PageResult<DeviceResponse> getDevices(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
         return deviceService.getDevicesByPage(page, size);
@@ -33,12 +34,12 @@ public class DeviceController {
     /**
      * 添加设备
      * POST /api/devices
-     * Body: { "deviceId": "xxx", "userId": "xxx", "deviceName": "xxx", "relay": false, "power": false, "battery": 100 }
+     * Body: { "deviceId": "xxx", "userId": "xxx", "deviceName": "xxx", "battery": 100 }
      */
     @PostMapping("/devices")
-    public ResponseEntity<?> addDevice(@RequestBody DeviceInfo device) {
+    public ResponseEntity<?> addDevice(@RequestBody DeviceRequest request) {
         try {
-            DeviceInfo result = deviceService.addDevice(device);
+            DeviceResponse result = deviceService.addDevice(request);
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -48,14 +49,12 @@ public class DeviceController {
 
     /**
      * 更新设备信息
-     * PUT /api/devices/{deviceId}
+     * PUT /api/devices
      */
-    @PutMapping("/devices/{deviceId}")
-    public ResponseEntity<?> updateDevice(
-            @PathVariable String deviceId,
-            @RequestBody DeviceInfo device) {
+    @PutMapping("/devices")
+    public ResponseEntity<?> updateDevice(@RequestBody DeviceRequest request) {
         try {
-            DeviceInfo result = deviceService.updateDevice(deviceId, device);
+            DeviceResponse result = deviceService.updateDevice(request);
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -64,24 +63,25 @@ public class DeviceController {
     }
 
     /**
-     * 控制设备 - 发送 relay/power 指令
+     * 控制设备 - 发送 5v/bump/sys_restart 指令
      * POST /api/devices/{deviceId}/control
-     * Body: { "relay": true, "power": false }
+     * Body: { "5v": true, "bump": false, "sys_restart": false }
      */
     @PostMapping("/devices/{deviceId}/control")
     public ResponseEntity<?> controlDevice(
             @PathVariable String deviceId,
-            @RequestBody ControlCommand command) {
+            @RequestBody ControlRequest command) {
         try {
-            Boolean relay = command.getRelay();
-            Boolean power = command.getPower();
+            Boolean fiveV = command.getFiveV();
+            Boolean bump = command.getBump();
+            Boolean sysRestart = command.getSysRestart();
 
-            if (relay == null && power == null) {
+            if (fiveV == null && bump == null && sysRestart == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(errorMap("请至少提供 relay 或 power 字段"));
+                        .body(errorMap("请至少提供 5v、bump 或 sys_restart 字段"));
             }
 
-            boolean success = deviceService.controlDevice(deviceId, relay, power);
+            boolean success = deviceService.controlDevice(deviceId, fiveV, bump, sysRestart);
             return ResponseEntity.ok(successMap(success, success ? "指令已发送" : "指令发送失败"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

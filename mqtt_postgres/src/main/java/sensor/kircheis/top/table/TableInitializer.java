@@ -28,10 +28,15 @@ public class TableInitializer {
                 "device_id VARCHAR(50) PRIMARY KEY, " +
                 "user_id VARCHAR(50) NOT NULL, " +
                 "device_name VARCHAR(100) NOT NULL, " +
-                "relay BOOLEAN DEFAULT false, " +
-                "power BOOLEAN DEFAULT false, " +
                 "battery INT, " +
                 "update_time BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000" +
+                ")",
+                "CREATE TABLE IF NOT EXISTS device_info_status (" +
+                "device_id VARCHAR(50) NOT NULL REFERENCES device_info(device_id) ON DELETE CASCADE, " +
+                "status_key VARCHAR(50) NOT NULL, " +
+                "status BOOLEAN DEFAULT false, " +
+                "update_time BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000, " +
+                "PRIMARY KEY (device_id, status_key)" +
                 ")",
                 "CREATE TABLE IF NOT EXISTS sensor_config (" +
                 "sensor_id VARCHAR(50) PRIMARY KEY, " +

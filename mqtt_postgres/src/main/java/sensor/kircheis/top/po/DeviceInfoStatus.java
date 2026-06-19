@@ -9,10 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class DeviceInfo {
+public class DeviceInfoStatus {
     private String deviceId;
-    private String userId;
-    private String deviceName;
-    private Integer battery;
+    private String statusKey;
+    private Boolean status;
     private Long updateTime;
 }

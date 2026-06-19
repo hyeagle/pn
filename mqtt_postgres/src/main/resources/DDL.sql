@@ -6,15 +6,22 @@ CREATE TABLE IF NOT EXISTS sys_user (
     create_time BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000
 );
 
--- 2. 设备表（含电量快照）
+-- 2. 设备表
 CREATE TABLE IF NOT EXISTS device_info (
     device_id VARCHAR(50) PRIMARY KEY,
     user_id VARCHAR(50) NOT NULL,
     device_name VARCHAR(100) NOT NULL,
-    relay BOOLEAN DEFAULT false,
-    power BOOLEAN DEFAULT false,
     battery INT,
     update_time BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000
+);
+
+-- 2.1 设备状态表（key-value，如 5v/bump）
+CREATE TABLE IF NOT EXISTS device_info_status (
+    device_id VARCHAR(50) NOT NULL REFERENCES device_info(device_id) ON DELETE CASCADE,
+    status_key VARCHAR(50) NOT NULL,
+    status BOOLEAN DEFAULT false,
+    update_time BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000,
+    PRIMARY KEY (device_id, status_key)
 );
 
 -- 3. 传感器元数据表

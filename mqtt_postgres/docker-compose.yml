@@ -20,6 +20,14 @@ services:
       - EMQX_AUTH__USER__2__PASSWORD=aiofm
       - EMQX_AUTH__USER__3__USERNAME=lyy
       - EMQX_AUTH__USER__3__PASSWORD=lyy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 400M
+        reservations:
+          cpus: "0.1"
+          memory: 200M
     healthcheck:
       test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
       interval: 10s
@@ -37,6 +45,11 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 123456
       POSTGRES_DB: sensordb
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 200M
     volumes:
       - /data/mqtt_sql/postgresql:/var/lib/postgresql/data
     healthcheck:
@@ -55,6 +68,14 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=kircheis
       - GF_SECURITY_ADMIN_PASSWORD=panning
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 400M
+        reservations:
+          cpus: "0.1"
+          memory: 200M
     volumes:
       - /data/mqtt_sql/grafana:/var/lib/grafana
     depends_on:
@@ -64,10 +85,15 @@ services:
   # ========== MQTT -> PostgreSQL Consumer (Spring Boot) ==========
   consumer:
     image: kircheis/sensor:0.0.1
-    container_name: mqtt_consumer
+    container_name: sensor
     restart: unless-stopped
     ports:
       - "8080:8080"      # Web / Health Check
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 400M
     volumes:
       - ./application.properties:/app/application.properties
     depends_on:

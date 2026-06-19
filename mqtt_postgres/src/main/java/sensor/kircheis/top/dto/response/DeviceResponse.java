@@ -1,4 +1,4 @@
-package sensor.kircheis.top.po;
+package sensor.kircheis.top.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,10 +9,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class DeviceInfo {
+public class DeviceResponse {
     private String deviceId;
     private String userId;
     private String deviceName;
     private Integer battery;
     private Long updateTime;
+    private Boolean fiveV;
+    private Boolean bump;
 }

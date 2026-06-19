@@ -545,6 +545,7 @@
     <div class="toolbar">
         <div class="toolbar-left" id="toolbarInfo">正在加载...</div>
         <div class="toolbar-right">
+            <button class="btn btn-outline" onclick="loadDevices()">刷新</button>
             <button class="btn btn-primary" onclick="openAddModal()">+ 添加设备</button>
             <select class="page-size-select" id="pageSizeSelect">
                 <option value="10">每页 10 条</option>
@@ -564,8 +565,8 @@
                     <th>设备ID</th>
                     <th>设备名称</th>
                     <th>所属用户</th>
-                    <th>Relay</th>
-                    <th>Power</th>
+                    <th>5v</th>
+                    <th>Bump</th>
                     <th>电量</th>
                     <th>最后更新时间</th>
                     <th>操作</th>
@@ -624,21 +625,31 @@
         <div class="modal-body">
             <div class="control-item">
                 <div>
-                    <div class="control-label">继电器 (Relay)</div>
-                    <div class="control-desc">控制继电器开关</div>
+                    <div class="control-label">5v</div>
+                    <div class="control-desc">5v 输出控制</div>
                 </div>
                 <label class="toggle-switch">
-                    <input type="checkbox" id="controlRelay">
+                    <input type="checkbox" id="controlFiveV">
                     <span class="toggle-slider"></span>
                 </label>
             </div>
             <div class="control-item">
                 <div>
-                    <div class="control-label">电源 (Power)</div>
-                    <div class="control-desc">控制设备电源通断</div>
+                    <div class="control-label">Bump</div>
+                    <div class="control-desc">Bump 控制</div>
                 </div>
                 <label class="toggle-switch">
-                    <input type="checkbox" id="controlPower">
+                    <input type="checkbox" id="controlBump">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="control-item">
+                <div>
+                    <div class="control-label">是否复位</div>
+                    <div class="control-desc">系统复位指令（不记录状态）</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="controlSysRestart">
                     <span class="toggle-slider"></span>
                 </label>
             </div>
@@ -718,8 +729,8 @@
             return;
         }
         tbody.innerHTML = data.map(device => {
-            const relay = device.relay === true;
-            const power = device.power === true;
+            const fiveV = device.fiveV === true;
+            const bump = device.bump === true;
             const battery = device.battery != null ? device.battery : 0;
             const batteryLevel = battery >= 60 ? 'high' : (battery >= 20 ? 'medium' : 'low');
             const timeStr = device.updateTime ? new Date(device.updateTime).toLocaleString('zh-CN') : '-';
@@ -727,8 +738,8 @@
                 <td><span class="device-id">${escHtml(device.deviceId)}</span></td>
                 <td><span class="device-name">${escHtml(device.deviceName || '-')}</span></td>
                 <td>${escHtml(device.userId || '-')}</td>
-                <td><span class="status-badge ${relay ? 'online' : 'offline'}"><span class="status-dot ${relay ? 'online' : 'offline'}"></span>${relay ? '开' : '关'}</span></td>
-                <td><span class="status-badge ${power ? 'online' : 'offline'}"><span class="status-dot ${power ? 'online' : 'offline'}"></span>${power ? '开' : '关'}</span></td>
+                <td><span class="status-badge ${fiveV ? 'online' : 'offline'}"><span class="status-dot ${fiveV ? 'online' : 'offline'}"></span>${fiveV ? '开' : '关'}</span></td>
+                <td><span class="status-badge ${bump ? 'online' : 'offline'}"><span class="status-dot ${bump ? 'online' : 'offline'}"></span>${bump ? '开' : '关'}</span></td>
                 <td>
                     <div class="battery-wrapper">
                         <div class="battery-bar"><div class="battery-fill ${batteryLevel}" style="width:${battery}%"></div></div>
@@ -827,7 +838,7 @@
             battery: Math.max(0, Math.min(100, battery))
         });
 
-        const url = editingDeviceId ? API + '/' + editingDeviceId : API;
+        const url = API;
         const method = editingDeviceId ? 'PUT' : 'POST';
 
         fetch(url, {
@@ -895,8 +906,10 @@
     function openControlModal(deviceId) {
         controllingDeviceId = deviceId;
         document.getElementById('controlDeviceId').textContent = deviceId;
-        document.getElementById('controlRelay').checked = false;
-        document.getElementById('controlPower').checked = false;
+        var device = lastPageData.find(function(d) { return d.deviceId === deviceId; });
+        document.getElementById('controlFiveV').checked = device && device.fiveV === true;
+        document.getElementById('controlBump').checked = device && device.bump === true;
+        document.getElementById('controlSysRestart').checked = false;
         document.getElementById('controlModal').classList.add('active');
     }
 
@@ -905,13 +918,14 @@
     }
 
     function submitControl() {
-        const relay = document.getElementById('controlRelay').checked;
-        const power = document.getElementById('controlPower').checked;
+        const fiveV = document.getElementById('controlFiveV').checked;
+        const bump = document.getElementById('controlBump').checked;
+        const sysRestart = document.getElementById('controlSysRestart').checked;
 
         fetch(API + '/' + controllingDeviceId + '/control', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ relay: relay, power: power })
+            body: JSON.stringify({ "5v": fiveV, bump: bump, sys_restart: sysRestart })
         })
         .then(res => res.json())
         .then(data => {
@@ -921,6 +935,7 @@
                 showToast(data.message || '指令发送失败', 'error');
             }
             closeControlModal();
+            loadDevices();
         })
         .catch(err => {
             showToast('请求失败: ' + err.message, 'error');

@@ -1,18 +1,15 @@
-package sensor.kircheis.top.po;
+package sensor.kircheis.top.dto.request;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class DeviceInfo {
+public class DeviceRequest {
     private String deviceId;
     private String userId;
     private String deviceName;
     private Integer battery;
-    private Long updateTime;
 }

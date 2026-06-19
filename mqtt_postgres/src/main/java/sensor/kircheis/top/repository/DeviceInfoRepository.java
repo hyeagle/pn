@@ -21,8 +21,6 @@ public class DeviceInfoRepository {
             .deviceId(rs.getString("device_id"))
             .userId(rs.getString("user_id"))
             .deviceName(rs.getString("device_name"))
-            .relay(rs.getObject("relay", Boolean.class))
-            .power(rs.getObject("power", Boolean.class))
             .battery(rs.getObject("battery", Integer.class))
             .updateTime(rs.getObject("update_time", Long.class))
             .build();
@@ -30,13 +28,11 @@ public class DeviceInfoRepository {
     // ---------- 增 ----------
 
     public int insert(DeviceInfo device) {
-        String sql = "INSERT INTO device_info (device_id, user_id, device_name, relay, power, battery, update_time) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO device_info (device_id, user_id, device_name, battery, update_time) VALUES (?, ?, ?, ?, ?)";
         return jdbcTemplate.update(sql,
                 device.getDeviceId(),
                 device.getUserId(),
                 device.getDeviceName(),
-                device.getRelay(),
-                device.getPower(),
                 device.getBattery(),
                 device.getUpdateTime());
     }
@@ -56,12 +52,10 @@ public class DeviceInfoRepository {
     // ---------- 改 ----------
 
     public int update(DeviceInfo device) {
-        String sql = "UPDATE device_info SET user_id = ?, device_name = ?, relay = ?, power = ?, battery = ?, update_time = ? WHERE device_id = ?";
+        String sql = "UPDATE device_info SET user_id = ?, device_name = ?, battery = ?, update_time = ? WHERE device_id = ?";
         return jdbcTemplate.update(sql,
                 device.getUserId(),
                 device.getDeviceName(),
-                device.getRelay(),
-                device.getPower(),
                 device.getBattery(),
                 device.getUpdateTime(),
                 device.getDeviceId());
@@ -73,22 +67,6 @@ public class DeviceInfoRepository {
     public int updateBattery(String deviceId, int battery) {
         String sql = "UPDATE device_info SET battery = ? WHERE device_id = ?";
         return jdbcTemplate.update(sql, battery, deviceId);
-    }
-
-    /**
-     * 更新设备 relay 状态
-     */
-    public int updateRelay(String deviceId, boolean relay) {
-        String sql = "UPDATE device_info SET relay = ?, update_time = ? WHERE device_id = ?";
-        return jdbcTemplate.update(sql, relay, System.currentTimeMillis(), deviceId);
-    }
-
-    /**
-     * 更新设备 power 状态
-     */
-    public int updatePower(String deviceId, boolean power) {
-        String sql = "UPDATE device_info SET power = ?, update_time = ? WHERE device_id = ?";
-        return jdbcTemplate.update(sql, power, System.currentTimeMillis(), deviceId);
     }
 
     // ---------- 查 ----------
