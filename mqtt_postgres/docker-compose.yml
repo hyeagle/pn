@@ -68,6 +68,8 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=kircheis
       - GF_SECURITY_ADMIN_PASSWORD=panning
+      - GF_SERVER_DOMAIN=sensor.kircheis.top
+      - GF_SERVER_ROOT_URL=http://sensor.kircheis.top:3000
     deploy:
       resources:
         limits:

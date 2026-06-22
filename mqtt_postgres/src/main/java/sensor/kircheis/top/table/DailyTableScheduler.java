@@ -66,7 +66,7 @@ public class DailyTableScheduler {
                 "device_id VARCHAR(50) NOT NULL, " +
                 "sensor_id VARCHAR(50) NOT NULL, " +
                 "metric VARCHAR(50) NOT NULL, " +
-                "value NUMERIC(10,2) NOT NULL, " +
+                "value NUMERIC(12,4) NOT NULL, " +
                 "ts BIGINT NOT NULL, " +
                 "create_time TIMESTAMP DEFAULT now()" +
                 ") PARTITION BY RANGE (ts)";
@@ -107,7 +107,7 @@ public class DailyTableScheduler {
                 "device_id VARCHAR(50) NOT NULL, " +
                 "sensor_id VARCHAR(50) NOT NULL, " +
                 "metric VARCHAR(50) NOT NULL, " +
-                "value NUMERIC(10,2) NOT NULL, " +
+                "value NUMERIC(12,4) NOT NULL, " +
                 "ts BIGINT NOT NULL, " +
                 "create_time TIMESTAMP NOT NULL DEFAULT now(), " +
                 "PRIMARY KEY (id)" +

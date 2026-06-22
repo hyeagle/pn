@@ -36,6 +36,9 @@ public class SensorDataWriterService {
 
     public void save(String payload) throws Exception {
         SensorMessage sensorMessage = objectMapper.readValue(payload, SensorMessage.class);
+        if (sensorMessage.getTimestamp() <= 0) {
+            sensorMessage.setTimestamp(System.currentTimeMillis() / 1000);
+        }
         String reason = validate(sensorMessage);
         if (reason != null) {
             log.error("Validation failed: {}, payload: {}", reason, payload);
@@ -79,9 +82,6 @@ public class SensorDataWriterService {
     public String validate(SensorMessage message) {
         if (message.getDevice_id() == null || message.getDevice_id().isEmpty()) {
             return "device_id is empty";
-        }
-        if (message.getTimestamp() <= 0) {
-            return "timestamp is invalid (" + message.getTimestamp() + ")";
         }
         if (message.getData() == null || message.getData().isEmpty()) {
             return "data list is empty";
