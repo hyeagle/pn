@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # ========== MQTT Broker ==========
   emqx:
@@ -53,7 +51,7 @@ services:
     volumes:
       - /data/mqtt_sql/postgresql:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d testdb"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sensordb"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -86,7 +84,7 @@ services:
 
   # ========== MQTT -> PostgreSQL Consumer (Spring Boot) ==========
   consumer:
-    image: kircheis/sensor:0.0.1
+    image: kircheis/sensor:0.0.11
     container_name: sensor
     restart: unless-stopped
     ports:
