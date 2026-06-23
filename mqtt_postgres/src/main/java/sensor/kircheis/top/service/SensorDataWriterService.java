@@ -80,7 +80,9 @@ public class SensorDataWriterService {
             log.debug("Updated battery ({}%) for device {}", battery, deviceId);
         }
 
-        if (sensorMessage.getLat() != null && sensorMessage.getLon() != null) {
+        if (sensorMessage.getLat() != null && sensorMessage.getLon() != null
+                && !(BigDecimal.ZERO.compareTo(sensorMessage.getLat()) == 0
+                  && BigDecimal.ZERO.compareTo(sensorMessage.getLon()) == 0)) {
             gpsTrackRepository.upsert(deviceId, ts,
                     sensorMessage.getLat(), sensorMessage.getLon());
             log.debug("Stored GPS track for device {} at lat={}, lon={}", deviceId,
