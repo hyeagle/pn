@@ -45,6 +45,13 @@ public class TableInitializer {
                 "metric_name VARCHAR(50) NOT NULL, " +
                 "unit VARCHAR(20) NOT NULL, " +
                 "create_time BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000" +
+                ")",
+                "CREATE TABLE IF NOT EXISTS gps_track ( " +
+                "device_id VARCHAR(50) NOT NULL, " +
+                "record_ts BIGINT NOT NULL, " +
+                "latitude NUMERIC(10, 6) NOT NULL, " +
+                "longitude NUMERIC(11, 6) NOT NULL, " +
+                "PRIMARY KEY (device_id, record_ts) " +
                 ")"
         );
 

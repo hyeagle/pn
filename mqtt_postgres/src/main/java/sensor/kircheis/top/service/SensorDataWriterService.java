@@ -9,6 +9,7 @@ import sensor.kircheis.top.dto.SensorData;
 import sensor.kircheis.top.dto.SensorMessage;
 import sensor.kircheis.top.po.SensorDataRecord;
 import sensor.kircheis.top.repository.DeviceInfoRepository;
+import sensor.kircheis.top.repository.GpsTrackRepository;
 import sensor.kircheis.top.repository.SensorDataRepository;
 import sensor.kircheis.top.table.DailyTableScheduler;
 
@@ -30,6 +31,7 @@ public class SensorDataWriterService {
     private final DailyTableScheduler dailyTableScheduler;
     private final SensorDataRepository sensorDataRepository;
     private final DeviceInfoRepository deviceInfoRepository;
+    private final GpsTrackRepository gpsTrackRepository;
     private final Set<String> createdTables = ConcurrentHashMap.newKeySet();
     private static final ObjectMapper objectMapper = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -76,6 +78,13 @@ public class SensorDataWriterService {
         if (battery != null) {
             deviceInfoRepository.updateBattery(deviceId, battery);
             log.debug("Updated battery ({}%) for device {}", battery, deviceId);
+        }
+
+        if (sensorMessage.getLat() != null && sensorMessage.getLon() != null) {
+            gpsTrackRepository.upsert(deviceId, ts,
+                    sensorMessage.getLat(), sensorMessage.getLon());
+            log.debug("Stored GPS track for device {} at lat={}, lon={}", deviceId,
+                    sensorMessage.getLat(), sensorMessage.getLon());
         }
     }
 

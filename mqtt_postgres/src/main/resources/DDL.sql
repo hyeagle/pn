@@ -67,3 +67,12 @@ CREATE INDEX IF NOT EXISTS idx_sensor_ts_YYYYMMDD ON sensor_data_YYYYMMDD (senso
 -- 6月9号的分区，边界值用秒级时间戳
 ALTER TABLE sensor_data ATTACH PARTITION sensor_data_20260609
   FOR VALUES FROM (1749499200) TO (1749585600);
+
+-- 8. 位置
+CREATE TABLE IF NOT EXISTS gps_track (
+    device_id VARCHAR(50) NOT NULL,
+    record_ts BIGINT NOT NULL,
+    latitude NUMERIC(10, 6) NOT NULL,
+    longitude NUMERIC(11, 6) NOT NULL,
+    PRIMARY KEY (device_id, record_ts)
+);
